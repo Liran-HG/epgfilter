@@ -9,10 +9,12 @@ services:
       NODE_ENV: production
     volumes:
       - .:/usr/src/app  # Optional: Mount the current directory for live updates (remove for production)
-    restart: unless-stopped  # Use this for restart policies with standalone Docker
+    deploy:
+      restart_policy:
+        condition: on-failure  # Use a restart policy with Swarm
     networks:
       - epgfilter_network
 
 networks:
   epgfilter_network:
-    driver: bridge  # Make sure the network is compatible with standalone mode
+    driver: overlay  # Use the overlay driver for Swarm mode
