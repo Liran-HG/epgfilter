@@ -1,4 +1,5 @@
 // src/filterEpg.ts
+import 'dotenv/config';
 import fs from "fs";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
 import * as zlib from "zlib";
@@ -143,7 +144,7 @@ export function filterEpg(): void {
   try {
 
     let file:string = process.env.EPG_LOCAL_FILE ?? 'epg.xml';
-    if(!process.env.USE_LOCAL_FILE){
+    if(!(process.env.USE_LOCAL_FILE?.toLowerCase() === "true")){
       file=process.env.EPG_URL_PATH ?? ""
     }
     console.log("Using EPG file:", file);
