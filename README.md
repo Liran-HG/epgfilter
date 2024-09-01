@@ -1,3 +1,7 @@
+
+> [!WARNING]  
+> This project is still heavily WIP. Try at your own risk.
+
 # epgfilter
 Apply filters to an EPG file and serve a slim down version
 

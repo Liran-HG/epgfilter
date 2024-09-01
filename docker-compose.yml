@@ -1,12 +1,20 @@
 version: '3.8'
 
+networks:
+  default:
+    driver: bridge
+
 services:
   epg-filter:
-    build: .
+    image: epgfilterapp:latest
     ports:
       - "3000:3000"  # Map port 3000 of the container to port 3000 on the host
     environment:
       NODE_ENV: production
     volumes:
       - .:/usr/src/app  # Optional: Mount the current directory for live updates (remove for production)
-    restart: unless-stopped
+    deploy:
+      restart_policy:
+        condition: on-failure
+    networks:
+      - default
