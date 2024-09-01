@@ -1,20 +1,18 @@
 version: '3.8'
 
-networks:
-  default:
-    driver: bridge
-
 services:
   epg-filter:
     image: epgfilterapp:latest
     ports:
-      - "3000:3000"
+      - "3000:3000"  # Map port 3000 of the container to port 3000 on the host
     environment:
       NODE_ENV: production
     volumes:
       - .:/usr/src/app  # Optional: Mount the current directory for live updates (remove for production)
-    deploy:
-      restart_policy:
-        condition: on-failure
+    restart: unless-stopped  # Use this for restart policies with standalone Docker
     networks:
-      - default
+      - epgfilter_network
+
+networks:
+  epgfilter_network:
+    driver: bridge  # Make sure the network is compatible with standalone mode
