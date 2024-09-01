@@ -1,15 +1,12 @@
 version: '3.8'
 
 services:
-  epg-filter:
-    build:
-      context: .
+  epgfilter:
+    container_name: epgfilter
+    image: liranhg/epgfilter:latest
     ports:
       - "3000:3000"
     environment:
       NODE_ENV: production
     volumes:
       - .:/usr/src/app
-    deploy:
-      restart_policy:
-        condition: on-failure
