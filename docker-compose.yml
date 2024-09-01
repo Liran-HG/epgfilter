@@ -1,8 +1,7 @@
-version: '3.8'
+version: '2.4'
 
 services:
   epgfilter:
-    container_name: epgfilter
     image: liranhg/epgfilter:latest
     ports:
       - "3000:3000"
@@ -10,3 +9,4 @@ services:
       NODE_ENV: production
     volumes:
       - .:/usr/src/app
+    restart: unless-stopped
