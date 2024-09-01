@@ -1,7 +1,7 @@
-version: '3.8'
-
+version: '2.4'
 services:
-  epg-filter:
+  epgfilter:
+    container_name: epgfilter
     image: epgfilterapp:latest
     ports:
       - "3000:3000"  # Map port 3000 of the container to port 3000 on the host
@@ -9,12 +9,4 @@ services:
       NODE_ENV: production
     volumes:
       - .:/usr/src/app  # Optional: Mount the current directory for live updates (remove for production)
-    deploy:
-      restart_policy:
-        condition: on-failure  # Use a restart policy with Swarm
-    networks:
-      - epgfilter_network
-
-networks:
-  epgfilter_network:
-    driver: overlay  # Use the overlay driver for Swarm mode
+    restart: unless-stopped
