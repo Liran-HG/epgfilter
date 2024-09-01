@@ -6,7 +6,7 @@ import path from "path";
 
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT ?? 3000;
 
 const filteredEpgFilePath = path.join(process.cwd(),process.env.EPG_OUTPUT_FILE_PATH ?? 'epg.xml');
 
