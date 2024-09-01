@@ -1,9 +1,5 @@
 version: '3.8'
 
-networks:
-  default:
-    driver: bridge
-
 services:
   epg-filter:
     image: epgfilterapp:latest
@@ -13,6 +9,10 @@ services:
       NODE_ENV: production
     volumes:
       - .:/usr/src/app  # Optional: Mount the current directory for live updates (remove for production)
+    restart: unless-stopped  # Use this for restart policies with standard Compose
     networks:
-      - default
-    restart: on-failure
+      - epgfilter_network
+
+networks:
+  epgfilter_network:
+    driver: bridge
