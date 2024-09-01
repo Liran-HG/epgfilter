@@ -3,7 +3,6 @@ import { CronJob } from "cron";
 import fs from "fs";
 import { filterEpg } from "./filterEpg";
 import path from "path";
-import { fileURLToPath } from "url";
 
 
 const app = express();
@@ -21,7 +20,7 @@ const job = new CronJob(`0 */${process.env.FETCH_HOUR_INTERVAL ?? 12} * * *`, ()
 
 job.start();
 
-app.get("/epg.xml", (req, res) => {
+app.get(process.env.API_EPG_RESULT_PATH ?? "/epg.xml", (req, res) => {
   // Read the filtered EPG file
   fs.readFile(filteredEpgFilePath, 'utf-8', (err, data) => {
     if (err) {
