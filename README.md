@@ -30,7 +30,7 @@ and the following programme format:
 
 ## Quickstart
 
-> [!IMPORTANT]
+> [!CAUTION]
 > You must configure the required environment variables.
 
 1. Configure required Environment variables: 
