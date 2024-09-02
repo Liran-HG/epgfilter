@@ -198,7 +198,7 @@ function buildXml(
     channels: channels.length,
     programs: programs.length,
   });
-
+  
   const xmlObject = {
     tv: {
       "@_generator-info-name":
@@ -225,7 +225,15 @@ function buildXml(
   };
   logger.log(LogLevel.DEBUG, "XML Object made");
 
-  return builder.build(xmlObject);
+  // Build the XML content
+  const xmlContent = builder.build(xmlObject);
+
+  // Prepend XML declaration and doctype
+  const xmlDeclaration = '<?xml version="1.0" encoding="UTF-8"?>';
+  const doctype = '<!DOCTYPE tv SYSTEM "https://raw.githubusercontent.com/XMLTV/xmltv/master/xmltv.dtd">';
+
+  // Combine everything into the final XML string
+  return `${xmlDeclaration}\n${doctype}\n${xmlContent}`;
 }
 
 function createXmlFromData(
