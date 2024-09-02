@@ -10,6 +10,22 @@
           "kind": "build",
           "isDefault": true
         }
+      },
+      {
+        "label": "Deploy Docker Image",
+        "type": "shell",
+        "command": "./docker-deploy.sh",
+        "problemMatcher": [],
+        "detail": "Builds, tags, and pushes the Docker image using the version from package.json",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        },
+        "options": {
+          "cwd": "${workspaceFolder}"
+        }
       }
     ]
   }
