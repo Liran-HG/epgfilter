@@ -5,10 +5,11 @@
     "moduleResolution": "node",
     "outDir": "./dist",
     "rootDir": "./src",
-    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
-    "sourceMap": true,  // Make sure this is true
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
