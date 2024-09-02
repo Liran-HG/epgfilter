@@ -9,7 +9,7 @@ const distDir = path.join(__dirname, '../dist');
 
 function modifyImports(filePath) {
   let content = fs.readFileSync(filePath, 'utf8');
-
+  // find all js imports and add .js
   content = content.replace(/from\s+['"](\.\/[^'".]+)(?!\.js)['"]/g, 'from "$1.js"');
 
   fs.writeFileSync(filePath, content, 'utf8');
