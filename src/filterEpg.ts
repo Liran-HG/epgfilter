@@ -1,12 +1,13 @@
 // src/filterEpg.ts
-import 'dotenv/config';
+import "dotenv/config";
 import fs from "fs";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
 import * as zlib from "zlib";
 import { promisify } from "util";
 import axios from "axios";
 import sax from "sax";
-const filterSW = process.env.FILTER_STARTS_WITH ?? ""
+import { logger, LogLevel } from "./lib/logger";
+const filterSW = process.env.FILTER_STARTS_WITH ?? "";
 // Create a promisified version of the zlib gunzip function
 const gunzip = promisify(zlib.gunzip);
 
@@ -39,27 +40,28 @@ const isUrl = (source: string): boolean => {
   }
 };
 function isGzipped(filename: string): boolean {
-  return filename.toLowerCase().endsWith('.gz')
+  return filename.toLowerCase().endsWith(".gz");
 }
-  /**
-   * Returns the XML data either as it is
-   * or decompressed from a .gz file.
-   *
-   * The behavior can be enforced using the SOURCE_EPG_FORCED_FILE_TYPE env variable
-   *
-   * @param buffer The Buffer containing the EPG data.
-   * @param source The source string.
-   * @returns The decompressed Buffer or the original Buffer.
-   */
-async function getXmlDataFromBuffer(buffer: Buffer,source:string): Promise<Buffer> {
-  if(process.env.SOURCE_EPG_FORCED_FILE_TYPE?.toLowerCase() === "xml"){
-      return buffer
-  }
-  else if(process.env.SOURCE_EPG_FORCED_FILE_TYPE?.toLowerCase() == "gz") {
-    return await gunzip(buffer)
-  }
-  else{    
-    return isGzipped(source) ? await gunzip(buffer) : buffer
+/**
+ * Returns the XML data either as it is
+ * or decompressed from a .gz file.
+ *
+ * The behavior can be enforced using the SOURCE_EPG_FORCED_FILE_TYPE env variable
+ *
+ * @param buffer The Buffer containing the EPG data.
+ * @param source The source string.
+ * @returns The decompressed Buffer or the original Buffer.
+ */
+async function getXmlDataFromBuffer(
+  buffer: Buffer,
+  source: string
+): Promise<Buffer> {
+  if (process.env.SOURCE_EPG_FORCED_FILE_TYPE?.toLowerCase() === "xml") {
+    return buffer;
+  } else if (process.env.SOURCE_EPG_FORCED_FILE_TYPE?.toLowerCase() == "gz") {
+    return await gunzip(buffer);
+  } else {
+    return isGzipped(source) ? await gunzip(buffer) : buffer;
   }
 }
 async function fetchAndParseEpg(source: string) {
@@ -76,11 +78,11 @@ async function fetchAndParseEpg(source: string) {
       });
 
       // Decompress the .gz file
-      xmlData = await getXmlDataFromBuffer(response.data ,source);
+      xmlData = await getXmlDataFromBuffer(response.data, source);
     } else {
       // Read and decompress the .gz file from the local filesystem
       const fileBuffer = fs.readFileSync(source);
-      xmlData = await getXmlDataFromBuffer(fileBuffer,source);
+      xmlData = await getXmlDataFromBuffer(fileBuffer, source);
     }
     // Create a SAX parser
     const parser = sax.createStream(true); // true for strict mode
@@ -118,13 +120,12 @@ async function fetchAndParseEpg(source: string) {
 
           nextTagExpectedTag = "TITLE";
         } else {
-          relevantShow = false
+          relevantShow = false;
         }
       }
-
     });
     parser.on("text", (text: string) => {
-      if(!relevantShow) return;
+      if (!relevantShow) return;
       if (nextTagExpectedTag == "TITLE") {
         currentProgram.title = text;
         nextTagExpectedTag = "DESC";
@@ -132,94 +133,112 @@ async function fetchAndParseEpg(source: string) {
       if (nextTagExpectedTag == "DESC") {
         currentProgram.description = text;
       }
-      console.log("Text:", text);
+      logger.log(LogLevel.SILLY, "Parsed Text:", text);
     });
 
     parser.on("closetag", (tagName: string) => {
-      if(!relevantShow) return;
+      if (!relevantShow) return;
       if (tagName == "programme") {
-        console.log("Finished!", currentProgram);
+        logger.log(LogLevel.DEBUG, "Finished parsing program:", currentProgram);
         shows.push(currentProgram);
       }
       if (tagName == "desc") nextTagExpectedTag = "PROGRAM";
-      console.log("Closing tag:", tagName);
+      logger.log(LogLevel.SILLY, "Closing tag:", tagName);
     });
 
     parser.on("end", () => {
-      console.log("XML parsing completed.");
+      logger.log(LogLevel.INFO, "XML parsing completed.");
       createXmlFromData(generationDate, shows, channels);
     });
 
     parser.on("error", (error: Error) => {
-      console.error("Error during XML parsing:", error);
+      logger.log(LogLevel.ERROR, "Error during XML parsing:", error);
     });
 
     // Convert the decompressed buffer to a string and pipe to the SAX parser
     parser.write(xmlData.toString("utf-8"));
     parser.end();
   } catch (error) {
-    console.error("Error fetching or processing the EPG file:", error);
+    logger.log(
+      LogLevel.ERROR,
+      "Error fetching or processing the EPG file:",
+      error
+    );
   }
 }
 
 // Function to filter the EPG file
 export function filterEpg(): void {
   try {
-
-    let file:string = process.env.SOURCE_EPG_LOCAL_FILE ?? 'epg.xml';
-    if(!(process.env.SOURCE_USE_LOCAL_FILE?.toLowerCase() === "true")){
-      file=process.env.SOURCE_EPG_URL_PATH ?? ""
+    let file: string = process.env.SOURCE_EPG_LOCAL_FILE ?? "epg.xml";
+    if (!(process.env.SOURCE_USE_LOCAL_FILE?.toLowerCase() === "true")) {
+      file = process.env.SOURCE_EPG_URL_PATH ?? "";
     }
-    console.log("Using EPG file:", file);
+
+    logger.log(LogLevel.INFO, "Using EPG file:", file);
     fetchAndParseEpg(file);
   } catch (error) {
-    console.error("Error filtering EPG:", error);
+    logger.log(LogLevel.ERROR, "Error filtering EPG:", error);
   }
 }
 
-function buildXml(programs: Program[], channels: Channel[],generationDate: string): string {
-  const epgLang = process.env.EPG_LANGUAGE ?? 'en';
+function buildXml(
+  programs: Program[],
+  channels: Channel[],
+  generationDate: string
+): string {
+  const epgLang = process.env.EPG_LANGUAGE ?? "en";
   const builder = new XMLBuilder({
     ignoreAttributes: false,
     format: true,
-    suppressBooleanAttributes: false
+    suppressBooleanAttributes: false,
   });
-  
+
+  logger.log(LogLevel.INFO, "Building XML with data:", {
+    channels: channels.length,
+    programs: programs.length,
+  });
+
   const xmlObject = {
     tv: {
-      '@_generator-info-name': process.env.SOURCE_GENERATOR_INFO_NAME ?? 'EPG Generator',
-      '@_generation-date': generationDate,
-      channel: channels.map(channel => ({
-        '@_id': channel.id,
-        'display-name': channel.id
+      "@_generator-info-name":
+        process.env.SOURCE_GENERATOR_INFO_NAME ?? "EPG Generator",
+      "@_generation-date": generationDate,
+      channel: channels.map((channel) => ({
+        "@_id": channel.id,
+        "display-name": channel.id,
       })),
-      programme: programs.map(program => ({
-        '@_channel': program.channel,
-        '@_start': program.start,
-        '@_stop': program.stop,
+      programme: programs.map((program) => ({
+        "@_channel": program.channel,
+        "@_start": program.start,
+        "@_stop": program.stop,
         title: {
-          '@_lang': epgLang,
-          '#text': program.title
+          "@_lang": epgLang,
+          "#text": program.title,
         },
         desc: {
-          '@_lang': epgLang,
-          '#text': program.description
-        }
-      }))
-    }
+          "@_lang": epgLang,
+          "#text": program.description,
+        },
+      })),
+    },
   };
-
+  logger.log(LogLevel.DEBUG, "XML Object made");
 
   return builder.build(xmlObject);
-
 }
-
 
 function createXmlFromData(
   generationDate: string,
   shows: Program[],
   channels: Channel[]
 ) {
-  const res = buildXml(shows, channels,generationDate);
-  fs.writeFileSync(process.env.EPG_OUTPUT_FILE_PATH ?? 'epg.xml', res, "utf-8");
+  const res = buildXml(shows, channels, generationDate);
+  fs.writeFileSync(process.env.EPG_OUTPUT_FILE_PATH ?? "epg.xml", res, "utf-8");
+  logger.log(
+    LogLevel.INFO,
+    "XML file created:",
+    process.env.EPG_OUTPUT_FILE_PATH ?? "epg.xml"
+  );
+  logger.log(LogLevel.INFO, "FInished creating filtered EPG.");
 }

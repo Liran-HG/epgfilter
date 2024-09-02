@@ -4,6 +4,7 @@ import { CronJob } from "cron";
 import fs from "fs";
 import { filterEpg } from "./filterEpg";
 import path from "path";
+import { logger, LogLevel } from './lib/logger';
 
 
 const app = express();
@@ -12,6 +13,7 @@ const port = process.env.PORT ?? 3000;
 const filteredEpgFilePath = path.join(process.cwd(),process.env.EPG_OUTPUT_FILE_PATH ?? 'epg.xml');
 
 const filterEPG = () => {
+  logger.log(LogLevel.INFO,"Filtering EPG ...");
   filterEpg();
 };
 // Cron job to run the filter function periodically
@@ -20,13 +22,14 @@ const job = new CronJob(`0 */${process.env.FETCH_HOUR_INTERVAL ?? 12} * * *`, ()
 });
 
 job.start();
+if(!(process.env.FETCH_ON_START?.toLowerCase() === "false")) filterEPG();
 
 app.get(process.env.EPG_OUTPUT_API_RESULT_PATH ?? "/epg.xml", (req, res) => {
   // Read the filtered EPG file
   fs.readFile(filteredEpgFilePath, 'utf-8', (err, data) => {
     if (err) {
       // Handle error, e.g., file not found or read error
-      console.error('Error reading file:', err);
+      logger.log(LogLevel.ERROR, 'Error reading file:', err);
       res.status(500).send('Internal Server Error');
       return;
     }
@@ -51,5 +54,5 @@ app.get("/crontime", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}. Fetching EPG every ${process.env.FETCH_HOUR_INTERVAL ?? 12} hours. Source EPG URL path: ${process.env.SOURCE_EPG_URL_PATH ?? "UNSET"}. Source EPG File path: ${process.env.SOURCE_EPG_LOCAL_FILE ?? "UNSET"}. Using local EPG File: ${(process.env.SOURCE_USE_LOCAL_FILE?.toLowerCase() === "true") ? "YES" : "NO"}.`);
+  logger.log(LogLevel.INFO,`Server running at http://localhost:${port}. Fetching EPG every ${process.env.FETCH_HOUR_INTERVAL ?? 12} hours. Source EPG URL path: ${process.env.SOURCE_EPG_URL_PATH ?? "UNSET"}. Source EPG File path: ${process.env.SOURCE_EPG_LOCAL_FILE ?? "UNSET"}. Using local EPG File: ${(process.env.SOURCE_USE_LOCAL_FILE?.toLowerCase() === "true") ? "YES" : "NO"}.`);
 });
