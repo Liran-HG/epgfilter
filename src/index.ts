@@ -21,7 +21,7 @@ const job = new CronJob(`0 */${process.env.FETCH_HOUR_INTERVAL ?? 12} * * *`, ()
 
 job.start();
 
-app.get(process.env.API_EPG_RESULT_PATH ?? "/epg.xml", (req, res) => {
+app.get(process.env.EPG_OUTPUT_API_RESULT_PATH ?? "/epg.xml", (req, res) => {
   // Read the filtered EPG file
   fs.readFile(filteredEpgFilePath, 'utf-8', (err, data) => {
     if (err) {
@@ -51,5 +51,5 @@ app.get("/crontime", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}. Fetching EPG every ${process.env.FETCH_HOUR_INTERVAL ?? 12} hours.`);
+  console.log(`Server running at http://localhost:${port}. Fetching EPG every ${process.env.FETCH_HOUR_INTERVAL ?? 12} hours. Source EPG URL path: ${process.env.SOURCE_EPG_URL_PATH ?? "UNSET"}. Source EPG File path: ${process.env.SOURCE_EPG_LOCAL_FILE ?? "UNSET"}. Using local EPG File: ${(process.env.SOURCE_USE_LOCAL_FILE?.toLowerCase() === "true") ? "YES" : "NO"}.`);
 });

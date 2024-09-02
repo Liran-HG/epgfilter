@@ -38,7 +38,30 @@ const isUrl = (source: string): boolean => {
     return false;
   }
 };
-
+function isGzipped(filename: string): boolean {
+  return filename.toLowerCase().endsWith('.gz')
+}
+  /**
+   * Returns the XML data either as it is
+   * or decompressed from a .gz file.
+   *
+   * The behavior can be enforced using the SOURCE_EPG_FORCED_FILE_TYPE env variable
+   *
+   * @param buffer The Buffer containing the EPG data.
+   * @param source The source string.
+   * @returns The decompressed Buffer or the original Buffer.
+   */
+async function getXmlDataFromBuffer(buffer: Buffer,source:string): Promise<Buffer> {
+  if(process.env.SOURCE_EPG_FORCED_FILE_TYPE?.toLowerCase() === "xml"){
+      return buffer
+  }
+  else if(process.env.SOURCE_EPG_FORCED_FILE_TYPE?.toLowerCase() == "gz") {
+    return await gunzip(buffer)
+  }
+  else{    
+    return isGzipped(source) ? await gunzip(buffer) : buffer
+  }
+}
 async function fetchAndParseEpg(source: string) {
   try {
     let xmlData: Buffer;
@@ -53,11 +76,11 @@ async function fetchAndParseEpg(source: string) {
       });
 
       // Decompress the .gz file
-      xmlData = await gunzip(response.data);
+      xmlData = await getXmlDataFromBuffer(response.data ,source);
     } else {
       // Read and decompress the .gz file from the local filesystem
       const fileBuffer = fs.readFileSync(source);
-      xmlData = await gunzip(fileBuffer);
+      xmlData = await getXmlDataFromBuffer(fileBuffer,source);
     }
     // Create a SAX parser
     const parser = sax.createStream(true); // true for strict mode
@@ -143,9 +166,9 @@ async function fetchAndParseEpg(source: string) {
 export function filterEpg(): void {
   try {
 
-    let file:string = process.env.EPG_LOCAL_FILE ?? 'epg.xml';
-    if(!(process.env.USE_LOCAL_FILE?.toLowerCase() === "true")){
-      file=process.env.EPG_URL_PATH ?? ""
+    let file:string = process.env.SOURCE_EPG_LOCAL_FILE ?? 'epg.xml';
+    if(!(process.env.SOURCE_USE_LOCAL_FILE?.toLowerCase() === "true")){
+      file=process.env.SOURCE_EPG_URL_PATH ?? ""
     }
     console.log("Using EPG file:", file);
     fetchAndParseEpg(file);
@@ -164,7 +187,7 @@ function buildXml(programs: Program[], channels: Channel[],generationDate: strin
   
   const xmlObject = {
     tv: {
-      '@_generator-info-name': process.env.GENERATOR_INFO_NAME ?? 'EPG Generator',
+      '@_generator-info-name': process.env.SOURCE_GENERATOR_INFO_NAME ?? 'EPG Generator',
       '@_generation-date': generationDate,
       channel: channels.map(channel => ({
         '@_id': channel.id,
