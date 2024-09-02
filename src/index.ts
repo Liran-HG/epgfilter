@@ -5,7 +5,6 @@ import fs from "fs";
 import { filterEpg } from "./filterEpg";
 import path from "path";
 import { logger, LogLevel } from "./lib/logger";
-import packageJson from "../package.json";
 
 const app = express();
 const port = process.env.PORT ?? 3000;
@@ -64,7 +63,7 @@ app.listen(port, () => {
 });
 
 
-logger.log(LogLevel.INFO, `App Version: ${packageJson.version}`);
+logger.log(LogLevel.INFO, `App Version: ${process.env.npm_package_version ?? "UNKNOWN"}`);
 logger.log(
   LogLevel.INFO,
   `Fetching EPG every ${process.env.FETCH_HOUR_INTERVAL ?? 12} hours ...`
