@@ -1,20 +1,12 @@
-version: '3.8'
-
-networks:
-  default:
-    driver: bridge
+version: '2.4'
 
 services:
-  epg-filter:
-    image: epgfilterapp:latest
+  epgfilter:
+    image: liranhg/epgfilter:latest
     ports:
       - "3000:3000"
     environment:
       NODE_ENV: production
     volumes:
-      - .:/usr/src/app  # Optional: Mount the current directory for live updates (remove for production)
-    deploy:
-      restart_policy:
-        condition: on-failure
-    networks:
-      - default
+      - .:/usr/src/app
+    restart: unless-stopped
