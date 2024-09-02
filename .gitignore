@@ -132,3 +132,6 @@ dist
 # remove demo files
 *.xml
 *.xml.gz
+
+# script to update docker hub
+docker-deploy.sh
